@@ -1,24 +1,31 @@
 import logging
+import os
 
 import serial
 
 
 class ComSamplerBase:
-    def __init__(self, db_keys, dev_ser='/dev/ttyUSB0', baud_rate=9600):
+    def __init__(self, db_keys, dev_ser='/dev/ttyUSB0', baud_rate=9600, dir_save=''):
         self.ser = serial.Serial(dev_ser, baud_rate)
         self.ser.flushInput()
         self.db_keys = db_keys
         self.db = dict()
+        self.dir_save = dir_save
         for key in db_keys:
             self.db[key] = list()
 
-    def update_db(self):
-        pass
+    def save_db_current(self):
+        if not self.dir_save or not os.path.exists(self.dir_save):
+            return
+        for key in self.db_keys:
+            path_save = os.path.join(self.dir_save, key + '.txt')
+            with open(path_save, 'a') as f:
+                f.write(f'{self.db[key][-1]}\n')
 
 
 class ComSamplerFS01301(ComSamplerBase):
-    def __init__(self, db_keys, dev_ser='/dev/ttyUSB0', baud_rate=9600):
-        super().__init__(db_keys, dev_ser, baud_rate)
+    def __init__(self, db_keys, dev_ser='/dev/ttyUSB0', baud_rate=9600, dir_save=''):
+        super().__init__(db_keys, dev_ser, baud_rate, dir_save)
 
     def update_db(self):
         self.ser.write(b'\x01\x03\x00\x00\x00\x04\x44\x09')
@@ -41,11 +48,12 @@ class ComSamplerFS01301(ComSamplerBase):
             data.append(int(buff_lst[data_idx] + buff_lst[data_idx + 1], 16))
         for i, key in enumerate(self.db_keys):
             self.db[key].append(data[i])
+        self.save_db_current()
 
 
 class ComSamplerFS00801(ComSamplerBase):
-    def __init__(self, db_keys, dev_ser='/dev/ttyUSB0', baud_rate=9600):
-        super().__init__(db_keys, dev_ser, baud_rate)
+    def __init__(self, db_keys, dev_ser='/dev/ttyUSB0', baud_rate=9600, dir_save=''):
+        super().__init__(db_keys, dev_ser, baud_rate, dir_save)
         self.ser.write(b'\x11\x02\x01\x00\xEC')
 
     def update_db(self):
@@ -76,3 +84,27 @@ class ComSamplerFS00801(ComSamplerBase):
         logging.info(buff_lst)
         for i, key in enumerate(self.db_keys):
             self.db[key].append(data[i])
+        self.save_db_current()
+
+
+class ComSamplerFW2511(ComSamplerBase):
+    def __init__(self, db_keys, dev_ser='/dev/ttyUSB0', baud_rate=9600, dir_save=''):
+        super().__init__(db_keys, dev_ser, baud_rate, dir_save)
+
+    def update_db(self):
+        buff_lst = list()
+        while True:
+            recv = self.ser.read(1).hex()
+            buff_lst.append(recv)
+            logging.info(buff_lst)
+            if len(buff_lst) >= 6 and buff_lst[-1] == 'fa' and buff_lst[-6] == 'fe':
+                buff_lst = buff_lst[-6:]
+                break
+        logging.info(buff_lst)
+        # val_forward, val_backward = int(buff_lst[2], 16), int(buff_lst[3], 16)
+        data = list()
+        for data_idx in [2, 3]:
+            data.append(int(buff_lst[data_idx], 16))
+        for i, key in enumerate(self.db_keys):
+            self.db[key].append(data[i])
+        self.save_db_current()
