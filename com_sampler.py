@@ -1,26 +1,31 @@
 import logging
 import os
+import time
 
 import serial
 
 
 class ComSamplerBase:
     def __init__(self, db_keys, dev_ser='/dev/ttyUSB0', baud_rate=9600, dir_save=''):
+        self.dev_ser = dev_ser
         self.ser = serial.Serial(dev_ser, baud_rate)
         self.ser.flushInput()
         self.db_keys = db_keys
         self.db = dict()
+        self.db_raw = list()
         self.dir_save = dir_save
         for key in db_keys:
             self.db[key] = list()
 
-    def save_db_current(self):
+    def save_db_raw(self):
         if not self.dir_save or not os.path.exists(self.dir_save):
             return
-        for key in self.db_keys:
-            path_save = os.path.join(self.dir_save, key + '.txt')
-            with open(path_save, 'a') as f:
-                f.write(f'{self.db[key][-1]}\n')
+        file_name = os.path.basename(self.dev_ser)
+        path_save = os.path.join(self.dir_save, file_name + '.txt')
+        with open(path_save, 'a') as f:
+            for val in self.db_raw:
+                f.write(f'{time.time()} {val}\n')
+        self.db_raw.clear()
 
 
 class ComSamplerFS01301(ComSamplerBase):
@@ -43,12 +48,13 @@ class ComSamplerFS01301(ComSamplerBase):
         for _ in range(10):
             buff_lst.append(self.ser.read(1).hex())
         logging.info(buff_lst)
+        self.db_raw.extend(buff_lst)
         data = list()
         for data_idx in [3]:
             data.append(int(buff_lst[data_idx] + buff_lst[data_idx + 1], 16))
         for i, key in enumerate(self.db_keys):
             self.db[key].append(data[i])
-        self.save_db_current()
+        self.save_db_raw()
 
 
 class ComSamplerFS00801(ComSamplerBase):
@@ -57,8 +63,13 @@ class ComSamplerFS00801(ComSamplerBase):
         self.ser.write(b'\x11\x02\x01\x00\xEC')
 
     def update_db(self):
-        while self.ser.inWaiting() < 1 or not self.ser.read(1).hex() == '16':
+        while self.ser.inWaiting() < 1:
             continue
+        while True:
+            recv = self.ser.read(1).hex()
+            self.db_raw.append(recv)
+            if recv == '16':
+                break
         while self.ser.inWaiting() < 19:
             continue
         buff_lst = list()
@@ -72,6 +83,7 @@ class ComSamplerFS00801(ComSamplerBase):
         buff_lst.append(head_2)
         for _ in range(17):
             buff_lst.append(self.ser.read(1).hex())
+        self.db_raw.extend(buff_lst[1:])
         data = list()
         # data.append(int(buff_lst[3] + buff_lst[4], 16))
         # data.append(int(buff_lst[5] + buff_lst[6], 16))
@@ -84,7 +96,7 @@ class ComSamplerFS00801(ComSamplerBase):
         logging.info(buff_lst)
         for i, key in enumerate(self.db_keys):
             self.db[key].append(data[i])
-        self.save_db_current()
+        self.save_db_raw()
 
 
 class ComSamplerFW2511(ComSamplerBase):
@@ -95,6 +107,7 @@ class ComSamplerFW2511(ComSamplerBase):
         buff_lst = list()
         while True:
             recv = self.ser.read(1).hex()
+            self.db_raw.append(recv)
             buff_lst.append(recv)
             logging.info(buff_lst)
             if len(buff_lst) >= 6 and buff_lst[-1] == 'fa' and buff_lst[-6] == 'fe':
@@ -107,4 +120,4 @@ class ComSamplerFW2511(ComSamplerBase):
             data.append(int(buff_lst[data_idx], 16))
         for i, key in enumerate(self.db_keys):
             self.db[key].append(data[i])
-        self.save_db_current()
+        self.save_db_raw()
