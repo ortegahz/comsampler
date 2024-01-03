@@ -7,6 +7,7 @@ import serial
 
 class ComSamplerBase:
     def __init__(self, db_keys, dev_ser='/dev/ttyUSB0', baud_rate=9600, dir_save=''):
+        self.db_max_len = 4096
         self.dev_ser = dev_ser
         self.ser = serial.Serial(dev_ser, baud_rate)
         self.ser.flushInput()
@@ -54,6 +55,7 @@ class ComSamplerFS01301(ComSamplerBase):
             data.append(int(buff_lst[data_idx] + buff_lst[data_idx + 1], 16))
         for i, key in enumerate(self.db_keys):
             self.db[key].append(data[i])
+            self.db[key] = self.db[key][-self.db_max_len:]
         self.save_db_raw()
 
 
@@ -96,6 +98,7 @@ class ComSamplerFS00801(ComSamplerBase):
         logging.info(buff_lst)
         for i, key in enumerate(self.db_keys):
             self.db[key].append(data[i])
+            self.db[key] = self.db[key][-self.db_max_len:]
         self.save_db_raw()
 
 
@@ -120,4 +123,5 @@ class ComSamplerFW2511(ComSamplerBase):
             data.append(int(buff_lst[data_idx], 16))
         for i, key in enumerate(self.db_keys):
             self.db[key].append(data[i])
+            self.db[key] = self.db[key][-self.db_max_len:]
         self.save_db_raw()
