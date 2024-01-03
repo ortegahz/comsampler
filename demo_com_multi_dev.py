@@ -3,16 +3,14 @@ import logging
 import random
 import time
 
-from com_sampler import ComSampler
+from com_sampler import ComSamplerFS01301, ComSamplerFS00801
 from utils import set_logging, plot
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--cmd_in_a', default=b'\x01\x03\x00\x00\x00\x04\x44\x09')
     parser.add_argument('--db_keys_a', default=['CO'])
     parser.add_argument('--dev_ser_a', default='/dev/ttyUSB0')
-    parser.add_argument('--cmd_in_b', default=b'\x11\x02\x01\x00\xEC')
     parser.add_argument('--db_keys_b', default=['humidity', 'temperature', 'PM1.0', 'TVOC'])
     parser.add_argument('--dev_ser_b', default='/dev/ttyUSB1')
     parser.add_argument('--baud_rate', default=9600)
@@ -25,15 +23,11 @@ def run(**args):
     colors = list()
     for i in range(len(db_keys)):
         colors.append([random.random(), random.random(), random.random()])
-    com_sampler_a = ComSampler(args['cmd_in_a'], args['db_keys_a'],
-                               args['dev_ser_a'], args['baud_rate'],
-                               13, [3], ['01', '03', '08'])
-    com_sampler_b = ComSampler(args['cmd_in_b'], args['db_keys_b'],
-                               args['dev_ser_b'], args['baud_rate'],
-                               20, [7, 9, 15, 17], ['16', '11', '01'])
+    com_sampler_a = ComSamplerFS01301(args['db_keys_a'], args['dev_ser_a'], args['baud_rate'])
+    com_sampler_b = ComSamplerFS00801(args['db_keys_b'], args['dev_ser_b'], args['baud_rate'])
     while True:
-        com_sampler_a.update()
-        com_sampler_b.update()
+        com_sampler_a.update_db()
+        com_sampler_b.update_db()
         db = {**com_sampler_a.db, **com_sampler_b.db}
 
         plot(db, db_keys, colors)
