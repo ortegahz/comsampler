@@ -24,7 +24,8 @@ class ComSamplerBase:
         if not self.dir_save or not os.path.exists(self.dir_save):
             return
         file_name = os.path.basename(self.dev_ser)
-        path_save = os.path.join(self.dir_save, file_name + '.txt')
+        str_time = str(int(self.time_s))
+        path_save = os.path.join(self.dir_save, str_time + '_' + file_name + '.txt')
         with open(path_save, 'a') as f:
             for val in self.db_raw:
                 f.write(f'{time.time()} {val}\n')
@@ -127,7 +128,7 @@ class ComSamplerFW2511(ComSamplerBase):
         for i, key in enumerate(self.db_keys):
             self.db[key].append(data[i])
             self.db[key] = self.db[key][-self.db_max_len:]
-        # self.save_db_raw()
+        self.save_db_raw()
         fps = self.valid_cnt / (time.time() - self.time_s)
         logging.info(('fps --> ', fps))
 

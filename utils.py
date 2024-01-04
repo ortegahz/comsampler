@@ -14,8 +14,8 @@ def com_sampler_update_queue(sampler, queue):
 
 
 def make_dirs(dir_root):
-    if os.path.exists(dir_root):
-        shutil.rmtree(dir_root)
+    # if os.path.exists(dir_root):
+    #     shutil.rmtree(dir_root)
     if dir_root:
         os.makedirs(os.path.join(dir_root), exist_ok=True)
 

@@ -15,7 +15,7 @@ def parse_args():
     parser.add_argument('--dev_ser', default='/dev/ttyUSB0')
     parser.add_argument('--baud_rate', default=6250)
     parser.add_argument('--interval', default=1)  # second
-    parser.add_argument('--dir_save', default='')
+    parser.add_argument('--dir_save', default='/home/manu/tmp/sampler_results')
     parser.add_argument('--type_sensor', default='FW2511', help='FW2511 or FS01301 or FS00801')
     return parser.parse_args()
 
