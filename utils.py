@@ -29,9 +29,10 @@ def plot_db(db, keys, colors, pause_time_s=1):
     plt.ion()
     # for key in keys:
     for i, key in enumerate(keys):
-        time_idxs = range(len(db[key]))
+        # time_idxs = range(len(db[key]))
         plt.subplot(len(keys), 1, i + 1)
-        plt.plot(np.array(time_idxs), np.array(db[key]).astype(float), label=key, color=colors[i])
+        # logging.info((time_idxs, db[key]))
+        plt.plot(np.array(range(len(db[key]))), np.array(db[key]).astype(float), label=key, color=colors[i])
         if key == 'temperature':
             plt.ylabel('°c')
         elif key == 'humidity':
