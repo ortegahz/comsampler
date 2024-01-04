@@ -7,6 +7,7 @@ import serial
 
 class ComSamplerBase:
     def __init__(self, db_keys, dev_ser='/dev/ttyUSB0', baud_rate=9600, dir_save=''):
+        self.valid_cnt = 0
         self.db_max_len = 4096
         self.dev_ser = dev_ser
         self.ser = serial.Serial(dev_ser, baud_rate)
@@ -15,6 +16,7 @@ class ComSamplerBase:
         self.db = dict()
         self.db_raw = list()
         self.dir_save = dir_save
+        self.time_s = time.time()
         for key in db_keys:
             self.db[key] = list()
 
@@ -112,11 +114,12 @@ class ComSamplerFW2511(ComSamplerBase):
             recv = self.ser.read(1).hex()
             self.db_raw.append(recv)
             buff_lst.append(recv)
-            logging.info(buff_lst)
+            # logging.info(buff_lst)
             if len(buff_lst) >= 6 and buff_lst[-1] == 'fa' and buff_lst[-6] == 'fe':
                 buff_lst = buff_lst[-6:]
                 break
-        logging.info(buff_lst)
+        self.valid_cnt += 1
+        # logging.info(buff_lst)
         # val_forward, val_backward = int(buff_lst[2], 16), int(buff_lst[3], 16)
         data = list()
         for data_idx in [2, 3]:
@@ -124,4 +127,7 @@ class ComSamplerFW2511(ComSamplerBase):
         for i, key in enumerate(self.db_keys):
             self.db[key].append(data[i])
             self.db[key] = self.db[key][-self.db_max_len:]
-        self.save_db_raw()
+        # self.save_db_raw()
+        fps = self.valid_cnt / (time.time() - self.time_s)
+        logging.info(('fps --> ', fps))
+

@@ -6,6 +6,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
+def com_sampler_update_queue(sampler, queue):
+    while True:
+        sampler.update_db()
+        if queue.qsize() < 1:
+            queue.put(sampler.db)
+
+
 def make_dirs(dir_root):
     if os.path.exists(dir_root):
         shutil.rmtree(dir_root)
