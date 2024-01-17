@@ -62,6 +62,41 @@ class ComSamplerFS01301(ComSamplerBase):
         self.save_db_raw()
 
 
+class ComSamplerPM(ComSamplerBase):
+    def __init__(self, db_keys, dev_ser='/dev/ttyUSB0', baud_rate=9600, dir_save=''):
+        super().__init__(db_keys, dev_ser, baud_rate, dir_save)
+
+    def update_db(self):
+        while self.ser.inWaiting() < 1:
+            continue
+        while True:
+            recv = self.ser.read(1).hex()
+            self.db_raw.append(recv)
+            if recv == 'a5':
+                break
+        while self.ser.inWaiting() < 11:
+            continue
+        buff_lst = list()
+        head_0 = 'a5'
+        head_1 = self.ser.read(1).hex()
+        head_2 = self.ser.read(1).hex()
+        assert head_0 == 'a5' and head_1 == 'f2' and head_2 == '04'
+        logging.info((head_0, head_1, head_2))
+        buff_lst.append(head_0)
+        buff_lst.append(head_1)
+        buff_lst.append(head_2)
+        for _ in range(17):
+            buff_lst.append(self.ser.read(1).hex())
+        self.db_raw.extend(buff_lst[1:])
+        data = list()
+        data.append(int(buff_lst[8] + buff_lst[7], 16))  # PM 1.0
+        logging.info(buff_lst)
+        for i, key in enumerate(self.db_keys):
+            self.db[key].append(data[i])
+            self.db[key] = self.db[key][-self.db_max_len:]
+        self.save_db_raw()
+
+
 class ComSamplerFS00801(ComSamplerBase):
     def __init__(self, db_keys, dev_ser='/dev/ttyUSB0', baud_rate=9600, dir_save=''):
         super().__init__(db_keys, dev_ser, baud_rate, dir_save)
@@ -131,4 +166,3 @@ class ComSamplerFW2511(ComSamplerBase):
         self.save_db_raw()
         fps = self.valid_cnt / (time.time() - self.time_s)
         logging.info(('fps --> ', fps))
-

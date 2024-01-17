@@ -5,18 +5,18 @@ import time
 from queue import Queue
 from threading import Thread
 
-from com_sampler import ComSamplerFS01301, ComSamplerFS00801, ComSamplerFW2511
+from com_sampler import ComSamplerFS01301, ComSamplerFS00801, ComSamplerFW2511, ComSamplerPM
 from utils import set_logging, plot_db, make_dirs, com_sampler_update_queue
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--db_keys', nargs='+', default=['forward', 'backward'])
+    parser.add_argument('--db_keys', nargs='+', default=['pm'])
     parser.add_argument('--dev_ser', default='/dev/ttyUSB0')
-    parser.add_argument('--baud_rate', default=6250)
+    parser.add_argument('--baud_rate', default=9600)
     parser.add_argument('--interval', default=1)  # second
     parser.add_argument('--dir_save', default='/home/manu/tmp/sampler_results')
-    parser.add_argument('--type_sensor', default='FW2511', help='FW2511 or FS01301 or FS00801')
+    parser.add_argument('--type_sensor', default='PM', help='FW2511 or FS01301 or FS00801 or PM')
     return parser.parse_args()
 
 
@@ -32,6 +32,8 @@ def run(**args):
         com_sampler = ComSamplerFS01301(args['db_keys'], args['dev_ser'], args['baud_rate'], args['dir_save'])
     elif args['type_sensor'] == 'FS00801':
         com_sampler = ComSamplerFS00801(args['db_keys'], args['dev_ser'], args['baud_rate'], args['dir_save'])
+    elif args['type_sensor'] == 'PM':
+        com_sampler = ComSamplerPM(args['db_keys'], args['dev_ser'], args['baud_rate'], args['dir_save'])
     else:
         com_sampler = ComSamplerFW2511(args['db_keys'], args['dev_ser'], args['baud_rate'], args['dir_save'])
 
