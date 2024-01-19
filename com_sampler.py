@@ -74,7 +74,7 @@ class ComSamplerPM(ComSamplerBase):
             self.db_raw.append(recv)
             if recv == 'a5':
                 break
-        while self.ser.inWaiting() < 11:
+        while self.ser.inWaiting() < 10:
             continue
         buff_lst = list()
         head_0 = 'a5'
@@ -85,7 +85,7 @@ class ComSamplerPM(ComSamplerBase):
         buff_lst.append(head_0)
         buff_lst.append(head_1)
         buff_lst.append(head_2)
-        for _ in range(17):
+        for _ in range(8):
             buff_lst.append(self.ser.read(1).hex())
         self.db_raw.extend(buff_lst[1:])
         data = list()
